@@ -173,16 +173,16 @@ const importNotes = (event) => {
 
         <div v-if="notes.length > 0 && filteredNotes.length === 0" :class="isClassic ? 'text-white' : 'text-slate-400'" class="text-center py-12 mt-8">
           <span class="text-4xl block mb-4">?</span>
-          หาโน้ตไม่เจอเลย ลองพิมพ์คำอื่นดูนะ
+          หาโน้ตไม่เจอเลย ลองพิมพ์คำอื่นดู
         </div>
 
         <div v-if="notes.length === 0" :class="isClassic ? 'text-white' : 'text-slate-400'" class="text-center py-12 mt-8">
-          <span class="text-4xl block mb-4">👋</span>
-          ยังไม่มีโน้ตเลย กดสร้างโน้ตใหม่ด้านบนได้เลย!
+          <span class="text-4xl block mb-4">!</span>
+          ยังไม่มีโน้ต กดสร้างโน้ตใหม่ได้เลย
         </div>
 
       </div>
-      
+
     </main>
 
     <NoteModal
