@@ -3,32 +3,45 @@ import Navbar from './components/Navbar.vue'
 import SearchBar from './components/SearchBar.vue'
 import NoteCard from './components/NoteCard.vue'
 import NoteModal from './components/NoteModal.vue'
-import { ref, onMounted, watch, computed } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+
+// --- 🌟 อาวุธลับ: นำเข้า Firebase ---
+import { db } from './firebase'
+import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore'
 
 const isModalOpen = ref(false)
 const notes = ref([])
-const editingNoteIndex = ref(null)
 const editingNoteData = ref(null)
 const currentSearchQuery = ref('')
-
-// === 1. เพิ่มตัวแปรสำหรับระบบสลับโหมดคลาสสิก ===
 const isClassic = ref(false)
+
+// ชี้เป้าไปที่คอลเลกชันชื่อ "notes" ในฐานข้อมูล Firestore
+const notesCollection = collection(db, 'notes')
 
 const toggleTheme = () => {
   isClassic.value = !isClassic.value
 }
-// =======================================
 
-onMounted(() => {
-  const savedNotes = localStorage.getItem('my-wiki-notes-v2')
-  if (savedNotes) {
-    notes.value = JSON.parse(savedNotes)
+// --- 📡 1. ฟังก์ชันดึงข้อมูลจาก Cloud (มาแทน LocalStorage) ---
+const fetchNotes = async () => {
+  try {
+    const querySnapshot = await getDocs(notesCollection)
+    const loadedNotes = []
+    querySnapshot.forEach((doc) => {
+      // เอา id จาก Cloud มาแปะติดไว้กับข้อมูลโน้ตด้วย (สำคัญมากตอนสั่งลบ/แก้)
+      loadedNotes.push({ id: doc.id, ...doc.data() })
+    })
+    notes.value = loadedNotes
+  } catch (error) {
+    console.error("เกิดข้อผิดพลาดในการดึงข้อมูล: ", error)
+    alert("โหลดข้อมูลไม่ได้ครับ ลองเช็กเน็ตดูนะ!")
   }
-})
+}
 
-watch(notes, (newNotes) => {
-  localStorage.setItem('my-wiki-notes-v2', JSON.stringify(newNotes))
-}, { deep: true })
+// โหลดข้อมูลทันทีที่เปิดเว็บ
+onMounted(() => {
+  fetchNotes()
+})
 
 const filteredNotes = computed(() => {
   if (!currentSearchQuery.value) return notes.value
@@ -44,68 +57,56 @@ const handleSearch = (query) => {
 }
 
 const openModalForNew = () => {
-  editingNoteIndex.value = null
   editingNoteData.value = null
   isModalOpen.value = true
 }
 
 const openModalForEdit = (noteDataToEdit) => {
-  const actualIndex = notes.value.findIndex(n => n === noteDataToEdit)
-  editingNoteIndex.value = actualIndex
   editingNoteData.value = noteDataToEdit
   isModalOpen.value = true
 }
 
-const handleSaveNote = (noteData) => {
-  if (editingNoteIndex.value !== null) {
-    notes.value[editingNoteIndex.value] = noteData
-  } else {
-    notes.value.unshift(noteData)
-  }
-  isModalOpen.value = false
-}
-
-const handleDeleteNote = (noteDataToDelete) => {
-  if(confirm('แน่ใจนะว่าจะลบโน้ตนี้ทิ้ง?')) {
-      const actualIndex = notes.value.findIndex(n => n === noteDataToDelete)
-      notes.value.splice(actualIndex, 1)
-  }
-}
-
-// 1. ฟังก์ชันส่งออกไฟล์ (Export)
-const exportNotes = () => {
-  const data = JSON.stringify(notes.value, null, 2); // แปลงโน้ตเป็นตัวหนังสือ JSON
-  const blob = new Blob([data], { type: 'application/json' }); // สร้างก้อนข้อมูลไฟล์
-  const url = URL.createObjectURL(blob); // สร้างลิงก์ชั่วคราว
-
-  const link = document.createElement('a'); // สร้างปุ่มดาวน์โหลดล่องหน
-  link.href = url;
-  link.download = `my-wiki-backup-${new Date().toLocaleDateString()}.json`; // ตั้งชื่อไฟล์
-  link.click(); // สั่งให้คอมดาวน์โหลดทันที!
-};
-
-// 2. ฟังก์ชันนำเข้าไฟล์ (Import) ที่แก้บั๊กแล้ว!
-const importNotes = (event) => {
-  const file = event.target.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    try {
-      const importedData = JSON.parse(e.target.result);
-      if (Array.isArray(importedData)) {
-        notes.value = importedData; // ทับข้อมูลเดิมด้วยข้อมูลใหม่ (เดี๋ยว watch มันจัดการเซฟให้เอง)
-        alert('นำเข้าข้อมูลสำเร็จ!');
-      } else {
-        alert('ไฟล์นี้ไม่ใช่ไฟล์ Backup ของ My Wiki นะ!');
-      }
-    } catch (err) {
-      alert('ไฟล์เสีย หรือไม่ใช่ไฟล์ .json ครับน้อง!');
+// --- 🚀 2. ฟังก์ชันเซฟข้อมูลขึ้น Cloud ---
+const handleSaveNote = async (noteData) => {
+  try {
+    if (editingNoteData.value && editingNoteData.value.id) {
+      // แก้ไขของเดิม: ยิงไปอัปเดตที่ Cloud
+      const noteRef = doc(db, 'notes', editingNoteData.value.id)
+      await updateDoc(noteRef, {
+        title: noteData.title,
+        content: noteData.content,
+        date: noteData.date
+      })
+    } else {
+      // สร้างใหม่: โยนก้อนข้อมูลใหม่เข้า Cloud
+      await addDoc(notesCollection, {
+        title: noteData.title,
+        content: noteData.content,
+        date: noteData.date
+      })
     }
-    event.target.value = ''; // เคลียร์ช่องให้กดโหลดไฟล์เดิมซ้ำได้
-  };
-  reader.readAsText(file);
-};
+    // พอเซฟลง Cloud เสร็จ ก็สั่งให้โหลดข้อมูลมาอัปเดตหน้าเว็บใหม่
+    await fetchNotes()
+    isModalOpen.value = false
+  } catch (error) {
+    console.error("เกิดข้อผิดพลาดในการบันทึก: ", error)
+    alert("เซฟขึ้น Cloud ไม่สำเร็จครับ!")
+  }
+}
+
+// --- 💥 3. ฟังก์ชันลบข้อมูลออกจาก Cloud ---
+const handleDeleteNote = async (noteDataToDelete) => {
+  if(confirm('แน่ใจนะว่าจะลบโน้ตนี้ทิ้ง? บินหายไปจาก Cloud เลยนะ!')) {
+    try {
+      const noteRef = doc(db, 'notes', noteDataToDelete.id)
+      await deleteDoc(noteRef)
+      // พอลบเสร็จ ก็โหลดข้อมูลใหม่มาแสดง
+      await fetchNotes()
+    } catch (error) {
+      console.error("เกิดข้อผิดพลาดในการลบ: ", error)
+    }
+  }
+}
 </script>
 
 <template>
