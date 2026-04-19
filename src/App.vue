@@ -134,15 +134,11 @@ const importNotes = (event) => {
 
       <SearchBar @search="handleSearch" />
 
+
       <div class="mt-8">
         <h2 :class="isClassic ? 'text-white drop-shadow-md' : 'text-slate-700'" class="text-xl font-semibold mb-6 px-2">Knowledge Base</h2>
 
-        <div v-if="filteredNotes.length === 0" :class="isClassic ? 'text-white' : 'text-slate-400'" class="text-center py-12">
-          <span class="text-4xl block mb-4">?</span>
-          หาโน้ตไม่เจอเลย ลองพิมพ์คำอื่นดูนะ
-        </div>
-
-        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
 
           <div
             v-if="!isClassic"
@@ -174,7 +170,19 @@ const importNotes = (event) => {
           />
 
         </div>
+
+        <div v-if="notes.length > 0 && filteredNotes.length === 0" :class="isClassic ? 'text-white' : 'text-slate-400'" class="text-center py-12 mt-8">
+          <span class="text-4xl block mb-4">?</span>
+          หาโน้ตไม่เจอเลย ลองพิมพ์คำอื่นดูนะ
+        </div>
+
+        <div v-if="notes.length === 0" :class="isClassic ? 'text-white' : 'text-slate-400'" class="text-center py-12 mt-8">
+          <span class="text-4xl block mb-4">👋</span>
+          ยังไม่มีโน้ตเลย กดสร้างโน้ตใหม่ด้านบนได้เลย!
+        </div>
+
       </div>
+      
     </main>
 
     <NoteModal
