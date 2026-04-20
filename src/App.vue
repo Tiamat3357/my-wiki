@@ -110,30 +110,29 @@ const handleDeleteNote = async (noteDataToDelete) => {
 </script>
 
 <template>
+
   <div
-    :class="isClassic ? 'bg-[#008080] font-mono' : 'bg-slate-50 font-sans'"
-    class="min-h-screen flex flex-col"
-    :style="isClassic ? '' : 'background-image: radial-gradient(#cbd5e1 1px, transparent 1px); background-size: 20px 20px;'"
+    :class="isClassic ? 'bg-[#008080] font-mono crt-container' : 'bg-[#030712] font-sans text-slate-200'"
+    class="min-h-screen flex flex-col transition-all duration-700"
+    :style="!isClassic ? 'background-image: radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%), radial-gradient(at 100% 100%, rgba(147, 51, 234, 0.15) 0px, transparent 50%);' : ''"
   >
 
     <Navbar :isClassic="isClassic" @toggle-theme="toggleTheme" />
-
-
 
     <main class="flex-grow w-full max-w-6xl mx-auto px-6 pb-12 pt-6">
 
       <div class="flex justify-end gap-3 mb-4">
         <button @click="exportNotes" class="bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 px-4 py-2 rounded-xl text-sm font-bold shadow-sm transition-all active:scale-95">
-          📥 Backup
+          Backup
         </button>
 
         <label class="bg-slate-800 hover:bg-black text-white px-4 py-2 rounded-xl text-sm font-bold cursor-pointer shadow-sm transition-all active:scale-95">
-          📤 Restore
+          Restore
           <input type="file" @change="importNotes" class="hidden" accept=".json" />
         </label>
       </div>
 
-      <SearchBar @search="handleSearch" />
+      <SearchBar :isClassic="isClassic" @search="handleSearch" />
 
 
       <div class="mt-8">
@@ -189,6 +188,7 @@ const handleDeleteNote = async (noteDataToDelete) => {
     <NoteModal
       v-if="isModalOpen"
       :initialData="editingNoteData"
+      :isClassic="isClassic"  
       @close="isModalOpen = false"
       @save="handleSaveNote"
     />
@@ -196,27 +196,59 @@ const handleDeleteNote = async (noteDataToDelete) => {
   </div>
 </template>
 
-<!-- <style>
-/* สร้างคลาสพื้นหลังแบบขยับได้ โทนดาร์กนีออน-ไซอัน-ม่วง */
-.animated-aurora-bg {
-  /* ไล่สี 5 เฉด */
-  background: linear-gradient(
-    -45deg,
-    #0f172a, /* สีกรมท่าดาร์กๆ */
-    #3b0764, /* สีม่วงเข้ม */
-    #0d9488, /* สีไซอัน (นีออน) */
-    #1e1b4b  /* สีน้ำเงินเข้มลึก */
-  );
-  /* ขยายขนาดพื้นหลังให้ใหญ่ขึ้น 4 เท่า */
-  background-size: 400% 400%;
-  /* สั่งให้เล่นแอนิเมชันชื่อ moveAurora วนลูปไปเรื่อยๆ รอบละ 12 วินาที */
-  animation: moveAurora 12s ease infinite;
+<style scoped>
+/* 📺 ดีไซน์จอคอมเหลี่ยม (Classic Industrial) - ใช้งานง่าย ไม่ทะลุ */
+.crt-container {
+  /* เปลี่ยนจาก fixed เป็น min-h เพื่อให้เลื่อนได้ปกติ */
+  min-height: 100vh;
+  width: 100%;
+  position: relative;
+
+  /* ขอบเหลี่ยมกริบแบบคลาสสิก ยุค 90 */
+  border: 20px solid #a0a0a0;
+  border-radius: 0px;
+
+  /* เงาสร้างมิติจอคอม */
+  box-shadow: inset 0 0 80px rgba(0,0,0,0.4);
+  overflow: hidden;
+  transition: all 0.5s ease;
 }
 
-/* คำสั่งบอกให้พื้นหลังเลื่อนตำแหน่งไปมา */
-@keyframes moveAurora {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+/* 🎞️ เส้นขีดๆ (Scanlines) เพิ่มความเท่ */
+.crt-container::before {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0; left: 0; bottom: 0; right: 0;
+  background: linear-gradient(
+    rgba(18, 16, 16, 0) 50%,
+    rgba(0, 0, 0, 0.08) 50%
+  );
+  background-size: 100% 4px;
+  z-index: 5; /* อยู่หลัง Navbar แต่หน้าเนื้อหา */
+  pointer-events: none;
+  opacity: 0.4;
 }
-</style> -->
+
+/* 🖱️ Scrollbar ย้อนยุค (ปรับความหนาให้พอดี) */
+::-webkit-scrollbar {
+  width: 12px;
+}
+::-webkit-scrollbar-track {
+  background: #808080;
+}
+::-webkit-scrollbar-thumb {
+  background: #c0c0c0;
+  border: 2px solid white;
+}
+
+/* 🌑 Modern Dark Mode Tweaks */
+.bg-white\/80 {
+  background-color: rgba(30, 41, 59, 0.7) !important;
+  border-color: rgba(51, 65, 85, 1) !important;
+}
+
+:not(.isClassic) h2 {
+  color: #94a3b8 !important;
+}
+</style>
