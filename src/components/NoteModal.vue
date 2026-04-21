@@ -76,8 +76,7 @@ const handleSave = () => {
         <button @click="handleSave" class="px-5 py-2.5 rounded-xl font-semibold bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/30 transition-all active:scale-95">บันทึกโน้ต</button>
       </div>
     </div>
-
-    <div
+<div
       v-else
       class="w-full max-w-5xl bg-[#c0c0c0] border-[3px] border-t-white border-l-white border-b-black border-r-black flex flex-col shadow-[4px_4px_0_0_rgba(0,0,0,1)]"
     >
@@ -88,7 +87,7 @@ const handleSave = () => {
 
       <div class="p-4 flex flex-col gap-3">
         <input v-model="title" type="text" placeholder="Title..." class="w-full bg-white border-2 border-t-black border-l-black border-b-white border-r-white px-2 py-1 text-black font-mono outline-none" />
-        <textarea v-model="content" placeholder="Content..." class="w-full h-64 bg-white border-2 border-t-black border-l-black border-b-white border-r-white px-2 py-1 text-black font-mono outline-none resize-none"></textarea>
+        <textarea v-model="content" placeholder="Content..." class="w-full h-[60vh] bg-white border-2 border-t-black border-l-black border-b-white border-r-white px-3 py-2 text-black font-mono outline-none resize-none"></textarea>
       </div>
 
       <div class="p-4 flex justify-end gap-2">
