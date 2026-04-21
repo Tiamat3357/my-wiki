@@ -22,13 +22,12 @@ const toggleTheme = () => {
   isClassic.value = !isClassic.value
 }
 
-// --- 📡 1. ฟังก์ชันดึงข้อมูลจาก Cloud (มาแทน LocalStorage) ---
+// --- 📡 1. ฟังก์ชันดึงข้อมูลจาก Cloud ---
 const fetchNotes = async () => {
   try {
     const querySnapshot = await getDocs(notesCollection)
     const loadedNotes = []
     querySnapshot.forEach((doc) => {
-      // เอา id จาก Cloud มาแปะติดไว้กับข้อมูลโน้ตด้วย (สำคัญมากตอนสั่งลบ/แก้)
       loadedNotes.push({ id: doc.id, ...doc.data() })
     })
     notes.value = loadedNotes
@@ -70,7 +69,6 @@ const openModalForEdit = (noteDataToEdit) => {
 const handleSaveNote = async (noteData) => {
   try {
     if (editingNoteData.value && editingNoteData.value.id) {
-      // แก้ไขของเดิม: ยิงไปอัปเดตที่ Cloud
       const noteRef = doc(db, 'notes', editingNoteData.value.id)
       await updateDoc(noteRef, {
         title: noteData.title,
@@ -78,14 +76,12 @@ const handleSaveNote = async (noteData) => {
         date: noteData.date
       })
     } else {
-      // สร้างใหม่: โยนก้อนข้อมูลใหม่เข้า Cloud
       await addDoc(notesCollection, {
         title: noteData.title,
         content: noteData.content,
         date: noteData.date
       })
     }
-    // พอเซฟลง Cloud เสร็จ ก็สั่งให้โหลดข้อมูลมาอัปเดตหน้าเว็บใหม่
     await fetchNotes()
     isModalOpen.value = false
   } catch (error) {
@@ -100,7 +96,6 @@ const handleDeleteNote = async (noteDataToDelete) => {
     try {
       const noteRef = doc(db, 'notes', noteDataToDelete.id)
       await deleteDoc(noteRef)
-      // พอลบเสร็จ ก็โหลดข้อมูลใหม่มาแสดง
       await fetchNotes()
     } catch (error) {
       console.error("เกิดข้อผิดพลาดในการลบ: ", error)
@@ -121,19 +116,7 @@ const handleDeleteNote = async (noteDataToDelete) => {
 
     <main class="flex-grow w-full max-w-6xl mx-auto px-6 pb-12 pt-6">
 
-      <div class="flex justify-end gap-3 mb-4">
-        <button @click="exportNotes" class="bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 px-4 py-2 rounded-xl text-sm font-bold shadow-sm transition-all active:scale-95">
-          Backup
-        </button>
-
-        <label class="bg-slate-800 hover:bg-black text-white px-4 py-2 rounded-xl text-sm font-bold cursor-pointer shadow-sm transition-all active:scale-95">
-          Restore
-          <input type="file" @change="importNotes" class="hidden" accept=".json" />
-        </label>
-      </div>
-
       <SearchBar :isClassic="isClassic" @search="handleSearch" />
-
 
       <div class="mt-8">
         <h2 :class="isClassic ? 'text-white drop-shadow-md' : 'text-slate-700'" class="text-xl font-semibold mb-6 px-2">Knowledge Base</h2>
@@ -188,7 +171,7 @@ const handleDeleteNote = async (noteDataToDelete) => {
     <NoteModal
       v-if="isModalOpen"
       :initialData="editingNoteData"
-      :isClassic="isClassic"  
+      :isClassic="isClassic"
       @close="isModalOpen = false"
       @save="handleSaveNote"
     />
@@ -199,16 +182,11 @@ const handleDeleteNote = async (noteDataToDelete) => {
 <style scoped>
 /* 📺 ดีไซน์จอคอมเหลี่ยม (Classic Industrial) - ใช้งานง่าย ไม่ทะลุ */
 .crt-container {
-  /* เปลี่ยนจาก fixed เป็น min-h เพื่อให้เลื่อนได้ปกติ */
   min-height: 100vh;
   width: 100%;
   position: relative;
-
-  /* ขอบเหลี่ยมกริบแบบคลาสสิก ยุค 90 */
   border: 20px solid #a0a0a0;
   border-radius: 0px;
-
-  /* เงาสร้างมิติจอคอม */
   box-shadow: inset 0 0 80px rgba(0,0,0,0.4);
   overflow: hidden;
   transition: all 0.5s ease;
@@ -225,7 +203,7 @@ const handleDeleteNote = async (noteDataToDelete) => {
     rgba(0, 0, 0, 0.08) 50%
   );
   background-size: 100% 4px;
-  z-index: 5; /* อยู่หลัง Navbar แต่หน้าเนื้อหา */
+  z-index: 5;
   pointer-events: none;
   opacity: 0.4;
 }
